@@ -1,0 +1,8 @@
+cmake_minimum_required(VERSION 3.10)
+project(ThermalObjectDetection)
+set(CMAKE_CXX_STANDARD 14)
+find_library(NVINFER nvinfer REQUIRED)
+find_library(CUDART cudart HINTS /usr/local/cuda/lib64 REQUIRED)
+add_executable(thermal_engine main.cpp)
+target_include_directories(thermal_engine PRIVATE /usr/local/cuda/include)
+target_link_libraries(thermal_engine ${NVINFER} ${CUDART})

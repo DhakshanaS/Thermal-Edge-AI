@@ -1,0 +1,11 @@
+name: CI
+on: [push, pull_request]
+jobs:
+  syntax-check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Python Syntax Check
+        run: python3 -m py_compile web/app.py
+      - name: C++ Syntax Check (via Stubs)
+        run: g++ -std=c++17 -fsyntax-only -Istubs src/main.cpp
