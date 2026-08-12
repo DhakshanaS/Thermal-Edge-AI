@@ -11,6 +11,63 @@
 </head>
 <body>
     <h2>Live Thermal Object Detection (TensorRT Edge)</h2>
-    <p id="status">Status: Waiting for video...</p>
+    <p id="status">Status: Requesting camera permissions...</p>
+    
+    <div class="container">
+        <div>
+            <h3>Your Webcam</h3>
+            <video id="webcam" autoplay playsinline muted></video>
+        </div>
+        <div>
+            <h3>TensorRT Output</h3>
+            <img id="processed" alt="Waiting for processed frames..."/>
+        </div>
+    </div>
+
+    <script>
+        const video = document.getElementById('webcam');
+        const processed = document.getElementById('processed');
+        const status = document.getElementById('status');
+        const canvas = document.createElement('canvas'); 
+        canvas.width = 640; 
+        canvas.height = 480;
+        const ctx = canvas.getContext('2d');
+        
+        navigator.mediaDevices.getUserMedia({ video: true })
+            .then(stream => { 
+                video.srcObject = stream; 
+                status.innerText = 'Status: Live 🟢 Streaming to Colab GPU...';
+                status.style.color = '#2ecc71';
+                video.onplay = () => { streamFrames(); };
+            })
+            .catch(err => { 
+                status.innerText = 'Camera Error: ' + err.message;
+                status.style.color = '#e74c3c';
+            });
+        
+        async function streamFrames() {
+            if (video.readyState === video.HAVE_ENOUGH_DATA) {
+                ctx.drawImage(video, 0, 0, 640, 480);
+                const dataUrl = canvas.toDataURL('image/jpeg', 0.5);
+                
+                try {
+                    const response = await fetch('/process_frame', {
+                        method: 'POST',
+                        headers: { 
+                            'Content-Type': 'application/json',
+                            'ngrok-skip-browser-warning': 'true'
+                        },
+                        body: JSON.stringify({ image: dataUrl })
+                    });
+                    
+                    const result = await response.json();
+                    processed.src = "data:image/jpeg;base64," + result.annotated_image;
+                } catch (err) {
+                    console.error("Network drop:", err);
+                }
+            }
+            setTimeout(streamFrames, 100);
+        }
+    </script>
 </body>
 </html>
